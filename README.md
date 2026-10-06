@@ -2,7 +2,7 @@
 
 Turn a Kindle Paperwhite into a simple weather display for your wall. Everything runs on the Kindle: no server, Raspberry Pi or always-on computer.
 
-![Weather display](weather-preview.png)
+<img src="docs/images/kindle-on-wall.jpg" alt="Kindle Weather running on a Paperwhite mounted on a wall" width="480">
 
 Shows current weather and temperature, today's low and high, and the next six hours of temperature, weather icons and rain chance. It refreshes hourly, with Wi-Fi and the frontlight off between updates. Active weather alerts and a battery warning below 20% appear when needed.
 
