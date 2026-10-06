@@ -1,0 +1,80 @@
+WEATHER ON THIS KINDLE
+
+Open Weather in the Kindle Library to start the wall display.
+On a fresh installation, enter your ZIP using the on-screen keyboard.
+No ZIP is preset. Connect to Wi-Fi in Kindle Settings before beginning setup.
+A new device runs a one-time one-minute sleep/wake check, then asks you to
+press Power to finish verification. Weather starts after successful setup.
+It gets weather directly over your saved Wi-Fi network. No computer is needed.
+The frontlight is off, Wi-Fi is off between updates, and the Kindle sleeps
+while the e-ink holds the weather image.
+
+TODAY'S WEATHER
+Shows the city, current conditions and current temperature at the top.
+Today's low is on the left and high on the right beneath that, followed by
+the hourly forecast and active National Weather Service
+alerts for your ZIP. Times use the ZIP's time zone. Opening Weather gets fresh
+data; after that it refreshes each clock hour, including midnight.
+
+HOURLY FORECAST
+The bottom strip shows the next six hours: time, weather symbol, temperature
+and precipitation chance. It moves forward at each hourly refresh.
+Current outdoor temperature appears below the current conditions.
+Forecast and alert data also refresh during that hourly connection.
+This is not a bedroom temperature sensor.
+
+CHANGE ZIP
+Press the power button once to leave Weather and return to the Library.
+Open Weather Settings. Use the on-screen keyboard:
+1 + Enter: type a new five-digit US ZIP, then Enter.
+Q + Enter: save and close.
+Two-finger tap opens kTerm's menu, which also has Quit.
+Reopen Weather to start the wall display with your saved settings.
+Connect to a new network in the Kindle's normal Wi-Fi settings before starting.
+
+OFFLINE
+The last successful weather stays visible. A failed forecast connection shows
+a small failure message. Dates and update times are saved internally.
+Alerts appear only when active; checks happen each hour.
+
+CHARGING AND RESTARTS
+Press the power button to leave Weather before connecting to a computer.
+The first successful launch installs a small automatic startup job.
+After a restart, Weather opens after the Kindle's normal startup finishes.
+Pressing Power to leave Weather keeps you in the Library until you open Weather
+again or restart the Kindle. The startup job runs only once per kernel boot.
+Startup installation status is saved in /mnt/us/weather/state/boot-install.txt.
+To disable automatic startup from a Kindle root terminal:
+mntroot rw; rm /etc/upstart/paperwhite-weather.conf; mntroot ro
+Battery readings are saved locally with each refresh so endurance can be measured.
+A small warning appears at the bottom when the battery reading is below 20%.
+The battery is checked at each weather refresh, including when Weather opens.
+
+SETUP CHECKS
+A fresh installation checks forecast access, one-minute sleep, timed wake,
+Wi-Fi reconnect and power-button input while awake. The layout has been used
+on a Paperwhite 3. Automatic startup installation has been verified, but an
+actual restart into Weather, Power wake from deep sleep and battery endurance
+still need physical confirmation.
+
+FILES ON THE KINDLE
+/mnt/us/weather (app, saved ZIP, cached data and battery log)
+/mnt/us/extensions/kterm (keyboard for settings)
+/mnt/us/documents/Weather.sh
+/mnt/us/documents/Weather Settings.sh
+
+INSTALLING ON ANOTHER DEVICE
+Use the fresh-install archive, which includes app files and the settings
+keyboard but no personal ZIP, cached weather or device verification marker.
+Extract it to the Kindle's USB root, safely eject, and open Weather.
+The current hardware checks target Paperwhite 3 on firmware 5.16.2.1.1.
+The new device must already have a working jailbreak and scriptlet launcher,
+with firmware updates blocked. Other Kindle models need their own hardware
+support and sleep/wake verification before this app can run safely.
+
+Weather: Open-Meteo. Alerts: US National Weather Service.
+ZIP lookup: Zippopotam.us. US time zone files: IANA time zone database,
+public domain, copied from the setup Mac's installed database.
+Temperatures are Fahrenheit; precipitation totals are inches.
+Display font: Liberation Sans 2.1.5, SIL Open Font License (fonts/LICENSE).
+Weather symbols: Noto Sans Symbols 2, SIL Open Font License (fonts/Noto-LICENSE).

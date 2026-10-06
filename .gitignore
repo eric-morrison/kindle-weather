@@ -1,0 +1,10 @@
+backups/
+downloads/
+staging/
+__pycache__/
+device-reports/
+.DS_Store
+device-preparation.json
+setup-status.json
+weather-install-manifest.json
+kindle-weather/state/
