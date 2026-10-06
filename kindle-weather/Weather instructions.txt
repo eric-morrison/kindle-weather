@@ -49,6 +49,8 @@ mntroot rw; rm /etc/upstart/paperwhite-weather.conf; mntroot ro
 Battery readings are saved locally with each refresh so endurance can be measured.
 A small warning appears at the bottom when the battery reading is below 20%.
 The battery is checked at each weather refresh, including when Weather opens.
+A small "Charged" line appears at 100% while connected to power.
+Charge status updates with the weather, rather than continuously.
 
 SETUP CHECKS
 A fresh installation checks forecast access, one-minute sleep, timed wake,

@@ -46,7 +46,9 @@ rm /etc/upstart/paperwhite-weather.conf
 mntroot ro
 ```
 
-Weather uses an RTC alarm and `mem` suspend between hourly updates. Battery readings are kept in `weather/state/battery.csv`; battery life has not yet been measured. The low-battery warning is checked when Weather opens and at each refresh.
+Weather uses an RTC alarm and `mem` suspend between hourly updates. Battery readings are kept in `weather/state/battery.csv`; battery life has not yet been measured. Battery status is checked when Weather opens and at each refresh: below 20% shows a warning; 100% with `com.lab126.powerd isCharging` reporting connected power shows “Charged”. Missing or invalid readings hide the charge message.
+
+Wi-Fi turns off before the weather frame is cleared and drawn, with a short pause for the native status update. This should prevent its airplane icon from appearing over the finished frame; the result still needs a physical check. On days without alerts, the hourly strip sits slightly lower. Active alerts retain their reserved space.
 
 If a forecast request fails, the last successful weather remains visible with a small failure message. Alerts are checked hourly, so this display should not be treated as a real-time alert service.
 

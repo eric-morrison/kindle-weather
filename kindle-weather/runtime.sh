@@ -131,6 +131,30 @@ wifi_on() {
     return 1
 }
 
+sample_battery() {
+    battery=$(lipc-get-prop com.lab126.powerd battLevel 2>/dev/null)
+    case "$battery" in
+        ''|*[!0-9]*) rm -f "$STATE/battery-percent" ;;
+        *) if [ "$battery" -le 100 ]; then
+               printf '%s\n' "$battery" > "$STATE/battery-percent"
+           else rm -f "$STATE/battery-percent"; fi ;;
+    esac
+    charging=$(lipc-get-prop com.lab126.powerd isCharging 2>/dev/null)
+    case "$charging" in
+        0|1) printf '%s\n' "$charging" > "$STATE/battery-charging" ;;
+        *) rm -f "$STATE/battery-charging" ;;
+    esac
+}
+
+paint_sleep_screen() {
+    # Radio changes can make the native status bar redraw its airplane icon.
+    # Let that finish before clearing and painting the complete weather frame.
+    lipc-set-prop com.lab126.cmd wirelessEnable 0 >/dev/null 2>&1 || return 1
+    sleep 2
+    /bin/sh "$BASE/dashboard.sh" --cached > "$STATE/screen.txt" || return 1
+    /bin/sh "$BASE/display.sh" --paint "$FBINK" >> "$STATE/runtime.log" 2>&1
+}
+
 cleanup_loop() {
     # Additional stop requests must not kill a framework start in progress.
     trap '' HUP INT TERM
@@ -187,27 +211,19 @@ loop() {
             printf 'Wi-Fi unavailable; cached data.\n' > "$STATE/notice"
             touch "$STATE/alerts-failed"
         fi
-        battery=$(lipc-get-prop com.lab126.powerd battLevel 2>/dev/null)
-        case "$battery" in
-            ''|*[!0-9]*) rm -f "$STATE/battery-percent" ;;
-            *) if [ "$battery" -le 100 ]; then
-                printf '%s\n' "$battery" > "$STATE/battery-percent"
-               else rm -f "$STATE/battery-percent"; fi ;;
-        esac
-        /bin/sh "$BASE/dashboard.sh" --cached > "$STATE/screen.txt"
-        /bin/sh "$BASE/display.sh" --paint "$FBINK" >> "$STATE/runtime.log" 2>&1 || exit 1
+        sample_battery
+        paint_sleep_screen || exit 1
         # One bounded capture lets the USB follow-up verify the actual font
         # layout, rather than relying only on the Mac's rasterizer preview.
-        if [ ! -f "$STATE/layout-v3-captured" ]; then
+        if [ ! -f "$STATE/layout-v4-captured" ]; then
             dd if=/dev/fb0 of="$STATE/display-framebuffer.raw" bs=1088 count=1448 2>/dev/null && \
-                touch "$STATE/layout-v3-captured"
+                touch "$STATE/layout-v4-captured"
         fi
         # Logs stay on the Kindle; rotate to avoid unbounded growth.
         [ ! -f "$STATE/battery.csv" ] || [ "$(wc -l < "$STATE/battery.csv")" -lt 2000 ] || \
             tail -1000 "$STATE/battery.csv" > "$STATE/battery.new"
         [ ! -f "$STATE/battery.new" ] || mv "$STATE/battery.new" "$STATE/battery.csv"
         printf '%s,%s,%s\n' "$(date +%s)" "$battery" "$HOURLY" >> "$STATE/battery.csv"
-        lipc-set-prop com.lab126.cmd wirelessEnable 0 >/dev/null 2>&1 || exit 1
         wake=$(next_wake "$(date +%s)") || exit 1
         printf '0\n' > "$RTC" || exit 1
         printf '%s\n' "$wake" > "$RTC" || exit 1

@@ -224,12 +224,14 @@ print(int(value.timestamp()) if fmt == '%s' else value.strftime(fmt))
 
     def test_current_condition_is_independent_of_daily_forecast(self):
         forecast = copy.deepcopy(FORECAST)
-        forecast['current']['weather_code'] = 0
+        forecast['current']['weather_code'] = 1
         (self.base / 'forecast.json').write_text(json.dumps(forecast, ensure_ascii=False))
         result = self.app()
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn('Currently Clear\n60\n', result.stdout)
+        self.assertIn('Currently Mostly Clear\n60\n', result.stdout)
         self.assertIn('Overcast', (self.base / 'state/forecast.txt').read_text())
+        # The formatting applies to sentence-case caches created by older builds.
+        self.assertIn('Conditions: Mostly clear', (self.base / 'state/current.txt').read_text())
 
     def test_failed_updates_preserve_cache_and_failure_state(self):
         self.app()
@@ -257,6 +259,62 @@ print(int(value.timestamp()) if fmt == '%s' else value.strftime(fmt))
         (self.base / 'alerts.json').write_text(json.dumps(alerts))
         self.assertIn('Flood Watch', self.app().stdout)
         self.assertIn('Flood Watch', self.app(WEATHER_TEST_ALERTS_FAIL='1').stdout)
+
+    def test_charged_requires_full_battery_and_valid_connected_reading(self):
+        self.app()
+        command = self.bin / 'lipc-get-prop'
+        command.write_text('''#!/bin/sh
+case "$2" in
+    battLevel) printf '%s\\n' "$TEST_BATTERY" ;;
+    isCharging) printf '%s\\n' "$TEST_CHARGING" ;;
+    *) exit 1 ;;
+esac
+''')
+        command.chmod(0o755)
+        source = (self.base / 'runtime.sh').read_text().rsplit('\ncase "${1:-}" in\n', 1)[0]
+        for battery, charging, charged in (
+            ('100', '1', True), ('100', '0', False), ('99', '1', False),
+            ('100', '', False), ('100', 'unavailable', False), ('101', '1', False),
+            ('', '1', False), ('19', '1', False),
+        ):
+            with self.subTest(battery=battery, charging=charging):
+                result = subprocess.run(['sh'], input=source + '\nsample_battery\n',
+                                        capture_output=True, text=True, timeout=5,
+                                        env={**self.env, 'TEST_BATTERY': battery,
+                                             'TEST_CHARGING': charging})
+                self.assertEqual(result.returncode, 0, result.stderr)
+                screen = self.app('--cached').stdout
+                self.assertEqual('Charged' in screen, charged)
+                if battery == '19':
+                    self.assertIn('Low battery — 19%', screen)
+                if charging not in ('0', '1'):
+                    self.assertFalse((self.base / 'state/battery-charging').exists())
+
+    def test_radio_settles_before_full_paint_and_failure_stops_paint(self):
+        self.app()
+        for name, body in {
+            'lipc-set-prop': 'printf "%s\\n" "$*" >> "$WEATHER_BASE/calls"\nexit "${TEST_RADIO_FAILURE:-0}"\n',
+            'sleep': 'printf "settle %s\\n" "$*" >> "$WEATHER_BASE/calls"\n',
+            'fbink': 'printf "fbink %s\\n" "$*" >> "$WEATHER_BASE/calls"\n',
+        }.items():
+            command = self.bin / name
+            command.write_text('#!/bin/sh\n' + body)
+            command.chmod(0o755)
+        source = (self.base / 'runtime.sh').read_text().rsplit('\ncase "${1:-}" in\n', 1)[0]
+        script = source + '\nFBINK=$(command -v fbink)\npaint_sleep_screen\n'
+        result = subprocess.run(['sh'], input=script, capture_output=True,
+                                text=True, timeout=5, env=self.env)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls_file = self.base / 'calls'
+        calls = calls_file.read_text().splitlines()
+        self.assertEqual(calls[:3], ['com.lab126.cmd wirelessEnable 0', 'settle 2', 'fbink -q -b -k'])
+        self.assertEqual(calls[-1], 'fbink -q -f -w -s')
+        calls_file.unlink()
+        result = subprocess.run(['sh'], input=script, capture_output=True,
+                                text=True, timeout=5,
+                                env={**self.env, 'TEST_RADIO_FAILURE': '1'})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(calls_file.read_text().splitlines(), ['com.lab126.cmd wirelessEnable 0'])
 
     def test_concurrent_exit_restores_framework_once_before_radio(self):
         state = self.base / 'state'
